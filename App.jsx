@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
-const APP_VERSION = "v2.4";
+const APP_VERSION = "v2.5";
 
 // ============ constants ============
 const BANDS = [
