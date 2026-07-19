@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
-const APP_VERSION = "v2.8";
+const APP_VERSION = "v2.9";
 
 // ============ constants ============
 const BANDS = [
@@ -304,6 +304,7 @@ export default function App() {
   const [noiseVol, setNoiseVol] = useState(0.25);
   // voice
   const [voiceReady, setVoiceReady] = useState(false);
+  const [voiceDur, setVoiceDur] = useState(0); // decoded length (s) — shows if the whole take loaded
   const [recording, setRecording] = useState(false);
   const [voiceVol, setVoiceVol] = useState(1.2);
   const [pulseDepth, setPulseDepth] = useState(0.65);
@@ -561,6 +562,7 @@ export default function App() {
     const decoded = await tmp.decodeAudioData(await blob.arrayBuffer());
     tmp.close();
     voiceBufRef.current = decoded;
+    setVoiceDur(decoded.duration);
     setVoiceReady(true);
   };
 
@@ -602,7 +604,9 @@ export default function App() {
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 5000);
       };
-      rec.start(1000); // collect every second — an interruption keeps everything up to it
+      rec.start(); // one clean file — Safari fully decodes unfragmented recordings
+                   // (the wake lock now prevents the mid-read cutoffs that
+                   //  the per-second capture was guarding against)
       recRef.current = rec;
       setRecording(true);
       setRecSec(0);
@@ -661,7 +665,7 @@ export default function App() {
     setTakes((p) => p.filter((t) => t.id !== id));
     if (activeTakeId === id) { voiceBufRef.current = null; setVoiceReady(false); setActiveTakeId(null); }
   };
-  const clearVoice = () => { voiceBufRef.current = null; setVoiceReady(false); setActiveTakeId(null); };
+  const clearVoice = () => { voiceBufRef.current = null; setVoiceReady(false); setVoiceDur(0); setActiveTakeId(null); };
 
   const renameTake = async (id) => {
     const cur = takes.find((t) => t.id === id);
@@ -704,7 +708,7 @@ export default function App() {
     if (!blob0) return;
     const url = URL.createObjectURL(blob0);
     const a = new Audio(url);
-    a.onended = () => { setPreviewingId(null); URL.revokeObjectURL(url); };
+    a.loop = true; // dry listen loops too — tap ◼ to stop
     a.play().catch(() => {});
     previewRef.current = a;
     setPreviewingId(id);
@@ -987,7 +991,7 @@ export default function App() {
       <section style={S.panel}>
         <div style={S.voiceHead}>
           <span style={S.sliderLabel}>Voice · pulsed at the beat</span>
-          {voiceReady && <span style={S.voiceOn}>● loaded — loops under Play</span>}
+          {voiceReady && <span style={S.voiceOn}>● loaded {fmtTime(voiceDur)} — loops under Play</span>}
         </div>
         {!storageOk && (
           <div style={{ ...S.hint, color: "#E8A34C", border: "1px solid #4A415F", borderRadius: 8, padding: "8px 10px", marginBottom: 4 }}>
