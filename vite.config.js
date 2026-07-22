@@ -4,7 +4,7 @@ import { copyFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 // flat-repo static files: copy to dist after build
-const statics = ["manifest.webmanifest", "sw.js", "icon-192.png", "icon-512.png"];
+const statics = ["manifest.webmanifest", "sw.js", "icon-180.png", "icon-192.png", "icon-512.png", "blessing.mp3"];
 
 export default defineConfig({
   plugins: [
